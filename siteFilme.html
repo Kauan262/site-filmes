@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dados de filmes</title>
+</head>
+
+<body>
+    <header>
+        <h1 id="T" style="display: inline;">Lista de filmes</h1>
+
+        <span>
+            <input type="text" spellcheck="false" placeholder="Digite o nome do filme..." id="nomeFilme">
+            <input type="button" id="P" value="Pesquisar" onclick="buscar()">
+        </span>
+    </header>
+
+    <div id="resultado"></div>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: rgb(26, 74, 90);
+            color: azure;
+            text-align: center;
+        }
+
+        input {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        img {
+            width: 200px;
+            border-radius: 10px;
+            margin: 10px 0;
+            cursor: pointer;
+        }
+
+        section {
+            margin-top: 20px;
+            background: rgb(14, 44, 64);
+            color: azure;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+    </style>
+
+    <script>
+        async function buscar() {
+            let nome = document.querySelector('#nomeFilme').value.trim();
+
+            if (!nome) {
+                alert("Por favor, digite o nome de um filme!");
+                return;
+            }
+
+            try {
+                const resposta = await fetch(`http://www.omdbapi.com/?apikey=5b37c2f2&t=${nome}`);
+                const filme = await resposta.json();
+
+                const lista = document.querySelector('#resultado');
+                lista.innerHTML = ''; // limpa resultados anteriores
+
+                if (filme.Response === "False") {
+                    lista.innerHTML = `<p>Filme não encontrado!</p>`;
+                    return;
+                }
+
+                const secao = document.createElement('section');
+                const imagem = document.createElement('img');
+                const titulo = document.createElement('div');
+                const informacoes = document.createElement('div');
+
+                titulo.innerHTML = `<h2><strong>${filme.Title}</strong> (${filme.Year})</h2>`;
+                imagem.src = filme.Poster;
+                informacoes.innerHTML = `
+                    Duração: ${filme.Runtime} <br>
+                    Diretor: ${filme.Director} <br>
+                    Atores principais: ${filme.Actors}
+                `;
+
+                // Efeito hover
+                imagem.addEventListener('mouseenter', () => {
+                    imagem.style.transform = 'scale(1.05)';
+                    imagem.style.boxShadow = '0 0 10px rgba(255, 255, 255, 1)';
+                    imagem.style.transition = 'all 0.3s ease';
+                });
+
+                imagem.addEventListener('mouseleave', () => {
+                    imagem.style.transform = 'scale(1)';
+                    imagem.style.boxShadow = 'none';
+                });
+
+                // Clique para traduzir a descrição
+                imagem.addEventListener('click', async () => {
+                    try {
+                        const textoOriginal = filme.Plot;
+
+                        const resposta = await fetch(
+                            `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textoOriginal)}&langpair=en|pt`
+                        );
+
+                        const dados = await resposta.json();
+                        const traducao = dados.responseData.translatedText;
+
+                        alert(`Descrição: ${traducao}`);
+                    } catch (erro) {
+                        console.error("Erro ao traduzir:", erro);
+                        alert("❌ Não foi possível traduzir a descrição do filme.");
+                    }
+                });
+
+                // Adiciona tudo na tela
+                secao.appendChild(titulo);
+                secao.appendChild(imagem);
+                secao.appendChild(informacoes);
+                lista.appendChild(secao);
+
+            } catch (erro) {
+                console.error("Erro ao carregar o filme:", erro);
+                alert("❌ Não foi possível carregar os dados da API.");
+            }
+        }
+    </script>
+</body>
+
+</html>
